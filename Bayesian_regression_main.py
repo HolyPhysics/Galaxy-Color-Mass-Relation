@@ -59,19 +59,19 @@ galaxy_log10_mass: list[float] =  2*np.log10(filtered_velocity_dispersion) - np.
 class maximum_likelihood_estimation_object(object):
 
     def __init__(self, initial_guess: list[float], colors: list[float], mass: list[float]) -> None:
-        self.initial_guess = initial_guess
-        self.colors = colors
-        self.mass = mass
+        self.initial_guess: list[float] = initial_guess
+        self.colors: list[float] = colors
+        self.mass: list[float] = mass
 
-    def log_likelihood_estimation_function(self, parameters):
+    def log_likelihood_estimation_function(self, parameters: list) -> float:
         slope, intercept, sigma_int = parameters
-        predicted_fit = slope*self.mass + intercept
+        predicted_fit: list[float] = slope*self.mass + intercept
 
         return -np.sum(norm.logpdf(self.colors,predicted_fit,sigma_int))
 
-    def maximum_likelihood_estimation(self) -> list[float]:
+    def maximum_likelihood_estimation(self) -> tuple[float]:
 
-        maximized_paremeters = minimize(self.log_likelihood_estimation_function, self.initial_guess, method="Nelder-Mead")
+        maximized_paremeters: OptimizeResult = minimize(self.log_likelihood_estimation_function, self.initial_guess, method="Nelder-Mead")
 
         slope, intercept, sigma_int = maximized_paremeters.x
 
@@ -83,8 +83,8 @@ class maximum_likelihood_estimation_object(object):
 
         # x_fit = self.colors
         # y_fit = slope * self.mass + intercept
-        mass_range = np.linspace(np.min(self.mass), np.max(self.mass), 500)
-        color_fit = intercept + slope * mass_range
+        mass_range: list[float] = np.linspace(np.min(self.mass), np.max(self.mass), 500)
+        color_fit: list[float] = intercept + slope * mass_range
 
         figure = plt.figure(figsize=(10,8.7))
         ax_main = figure.add_subplot(1,1,1)
@@ -107,7 +107,7 @@ class maximum_likelihood_estimation_object(object):
 
 
 if __name__ == '__main__':
-    initial_guess = [0.5,1.0,0.15]
+    initial_guess: list[float] = [0.5,1.0,0.15]
     desired_fit = maximum_likelihood_estimation_object(initial_guess, filtered_u_g_color, galaxy_log10_mass)
 
     slope, intercept = desired_fit.maximum_likelihood_estimation()
