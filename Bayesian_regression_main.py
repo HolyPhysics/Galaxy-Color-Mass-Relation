@@ -415,11 +415,11 @@ class Bayesian__Regressoion_for_Galaxy_Mass_Color_Fit(object):
 
         for lines in random_line_indices:
             color_fit: list[float] = sample_intercepts[lines] + sample_slopes[lines] * mass_range
-            ax_main.plot(mass_range, color_fit, 'r-', linewidth=2)
+            ax_main.plot(mass_range, color_fit, 'r-', linewidth=1)
 
         # Plot mean line
         mean_line = np.mean(sample_intercepts) + np.mean(sample_slopes) * mass_range
-        ax_main.plot(mass_range, mean_line, color="black", linewidth=3, label='Bayesian Mean')
+        ax_main.plot(mass_range, mean_line, color="black", linewidth=4, label='Bayesian Mean')
 
         ax_main.set_xlabel('Log10(M_galaxy) [centered]')
         ax_main.set_ylabel('(U-V) color')
@@ -454,9 +454,6 @@ if __name__ == '__main__':
     plt.show()
     desired_fit.plot_bayesian_fit()  # Final fit
     plt.show()
-    
-    print("MCMC complete! You now have professional-grade Bayesian analysis! ")
-
 
 
     
