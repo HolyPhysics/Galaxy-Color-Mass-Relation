@@ -66,7 +66,7 @@ galaxy_log10_mass = galaxy_log10_mass - np.mean(galaxy_log10_mass)
 # ax.hist(galaxy_g_mag, bins= int(np.floor(0.5*np.sqrt(len(galaxy_g_mag)))), color='red')
 # plt.show()
 
-class Bayesian__Regressoion_for_Galaxy_Mass_Color_Fit(object):
+class Bayesian_Regressoion_for_Galaxy_Mass_Color_Fit(object):
 
     def __init__(self, initial_guess: list[float], colors: list[float], mass: list[float]) -> None:
         self.initial_guess: list[float] = initial_guess
@@ -162,7 +162,7 @@ class Bayesian__Regressoion_for_Galaxy_Mass_Color_Fit(object):
             return  -self.log_posterior_probability(parameters)
 
         map_parameters: OptimizeResult = minimize(negative_log_posterior, self.initial_guess, method="Nelder-Mead")
-
+ 
         # Cache to avoid recomputation
         # if hasattr(self, '_map_cache'):
         #     return self._map_cache
@@ -430,8 +430,8 @@ class Bayesian__Regressoion_for_Galaxy_Mass_Color_Fit(object):
         return figure, ax_main
 
 if __name__ == '__main__':
-    initial_guess: list[float] = [0.5,1.0,0.15]
-    desired_fit = Bayesian__Regressoion_for_Galaxy_Mass_Color_Fit(initial_guess, filtered_u_g_color, galaxy_log10_mass)
+    initial_guess: list[float] = [0.5,1.0,0.2]
+    desired_fit = Bayesian_Regressoion_for_Galaxy_Mass_Color_Fit(initial_guess, filtered_u_g_color, galaxy_log10_mass)
     slope, intercept = desired_fit.maximum_likelihood_estimation()
     print(f' The best fit slope and intercept are {slope:.4} and {intercept:.4} respectively \n')
     desired_fig, desired_axis = desired_fit.frequentist_line_fit()
