@@ -127,7 +127,7 @@ class Bayesian__Regressoion_for_Galaxy_Mass_Color_Fit(object):
 
         # I'm using weakly informative priors for all these
         prior_slope: float = norm.logpdf(slope, 0,1)
-        prior_intercept: float = norm.logpdf(intercept,1,1)
+        prior_intercept: float = norm.logpdf(intercept,0,1)
         prior_sigma_int: float = norm.logpdf(sigma_int, 0, 1)
 
         return prior_slope + prior_intercept + prior_sigma_int
