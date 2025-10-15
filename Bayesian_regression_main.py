@@ -36,21 +36,21 @@ except Exception as err1:
 # print(f"Successfully loaded table with {len(galaxy_photometric_data)} rows")
 # print("Columns:", galaxy_photometric_data.columns)
 
-galaxy_u_mag: list[float] = galaxy_photometric_data['modelMag_u']
-galaxy_g_mag: list[float] = galaxy_photometric_data['modelMag_g'] # Note that g_mag is very close to v_mag. So, we use it here!
+galaxy_u_mag: list[float,...] = galaxy_photometric_data['modelMag_u']
+galaxy_g_mag: list[float,...] = galaxy_photometric_data['modelMag_g'] # Note that g_mag is very close to v_mag. So, we use it here!
 galaxy_velocity_dispersion: list[float] = galaxy_photometric_data['velDisp']
-galaxy_distance_info: list[float] = galaxy_photometric_data['redshift']
+galaxy_distance_info: list[float,...] = galaxy_photometric_data['redshift']
 
 galaxy_u_g_color: list[float,...] = galaxy_u_mag - galaxy_g_mag # ... indicates that this can be of variable length
 
 # We use the relation between mass and velocity dispersion provided by the virial theorem \n
 # to estimate the mass of the galaxies
 # We're assuming that the velocity dispersion is always positive since we'll be taking the log of the numbers
-velocity_dispersion_mask: list[bool] = ~np.isnan(galaxy_velocity_dispersion) & (galaxy_velocity_dispersion > 0)
-filtered_u_g_color: list[float] = galaxy_u_g_color[velocity_dispersion_mask]
-filtered_velocity_dispersion: list[float] = galaxy_velocity_dispersion[velocity_dispersion_mask]
+velocity_dispersion_mask: list[bool,...] = ~np.isnan(galaxy_velocity_dispersion) & (galaxy_velocity_dispersion > 0)
+filtered_u_g_color: list[float,...] = galaxy_u_g_color[velocity_dispersion_mask]
+filtered_velocity_dispersion: list[float,...] = galaxy_velocity_dispersion[velocity_dispersion_mask]
 # print(filtered_velocity_dispersion)
-galaxy_log10_mass: list[float] =  2*np.log10(filtered_velocity_dispersion) - np.log10(6.673) + 11
+galaxy_log10_mass: list[float,...] =  2*np.log10(filtered_velocity_dispersion) - np.log10(6.673) + 11
 
 # === ADD THIS LINE TO CENTER YOUR DATA ===
 galaxy_log10_mass = galaxy_log10_mass - np.mean(galaxy_log10_mass)
@@ -359,9 +359,10 @@ class Bayesian__Regressoion_for_Galaxy_Mass_Color_Fit(object):
             ax_current = ax_main[i]
 
             #plot all walkers for this parameter
-            for walkers in range(chains.shape[1]):
-                ax_current.plot(chains[:,walkers,i],"-k", alpha=0.4)
+            # for walkers in range(chains.shape[1]):
+            #     ax_current.plot(chains[:,walkers,i],"-k", alpha=0.4)
 
+            ax_current.plot(chains[:,:,i], "-k", alpha=0.4) #check if this works
             # add burn-in cutoff line
             ax_current.axvline(burning_point,color='red', linestyle='--', label=' Burn-in Cutoff')
             ax_current.set_ylabel(parameter_names[i])
