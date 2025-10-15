@@ -14,18 +14,23 @@ galaxy_photometric_url_path: str = "Skyserver_spectro.csv"
 # we try reading with different options
 try:
     # we let Astropy auto-detect the format
-    galaxy_photometric_data: list[float] = Table.read(galaxy_photometric_url_path, format='ascii')
+    galaxy_photometric_data: Table = Table.read(galaxy_photometric_url_path, format='ascii')
     
-except:
+except Exception as err1:
+
+    print(f' {type(err1).__name__} occured.')
+
     try:
-        # or we xplicitly specify CSV format
-        galaxy_photometric_data: list[float] = Table.read(galaxy_photometric_url_path, format='csv')
+        # or we explicitly specify CSV format
+        galaxy_photometric_data: Table = Table.read(galaxy_photometric_url_path, format='csv')
         
-    except:
+    except Exception as err2:
         # or we use pandas to read and convert to Astropy Table
+        print(f' {type(err2).__name__} occured.')
+
         import pandas as pd
-        df: list[float] = pd.read_csv(galaxy_photometric_url_path)
-        galaxy_photometric_data: list[float] = Table.from_pandas(df)
+        pandas_file: pd.DataFrame = pd.read_csv(galaxy_photometric_url_path)
+        galaxy_photometric_data: Table = Table.from_pandas(pandas_file)
 
 # We check that what we got is correct
 # print(f"Successfully loaded table with {len(galaxy_photometric_data)} rows")
@@ -36,7 +41,7 @@ galaxy_g_mag: list[float] = galaxy_photometric_data['modelMag_g'] # Note that g_
 galaxy_velocity_dispersion: list[float] = galaxy_photometric_data['velDisp']
 galaxy_distance_info: list[float] = galaxy_photometric_data['redshift']
 
-galaxy_u_g_color: list[float] = galaxy_u_mag - galaxy_g_mag
+galaxy_u_g_color: list[float,...] = galaxy_u_mag - galaxy_g_mag # ... indicates that this can be of variable length
 
 # We use the relation between mass and velocity dispersion provided by the virial theorem \n
 # to estimate the mass of the galaxies
