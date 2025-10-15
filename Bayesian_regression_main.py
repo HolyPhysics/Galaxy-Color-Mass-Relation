@@ -362,7 +362,7 @@ class Bayesian_Regressoion_for_Galaxy_Mass_Color_Fit(object):
             # for walkers in range(chains.shape[1]):
             #     ax_current.plot(chains[:,walkers,i],"-k", alpha=0.4)
 
-            ax_current.plot(chains[:,:,i], "-k", alpha=0.4) #check if this works
+            ax_current.plot(chains[:,:,i], "-k", alpha=0.4) # this works because chains[:,:,i] returns a 2d array of iterations and nwalkers
             # add burn-in cutoff line
             ax_current.axvline(burning_point,color='red', linestyle='--', label=' Burn-in Cutoff')
             ax_current.set_ylabel(parameter_names[i])
