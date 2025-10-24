@@ -42,6 +42,7 @@ galaxy_velocity_dispersion: list[float] = galaxy_photometric_data['velDisp']
 galaxy_distance_info: list[float,...] = galaxy_photometric_data['redshift']
 
 galaxy_u_g_color: list[float,...] = galaxy_u_mag - galaxy_g_mag # ... indicates that this can be of variable length
+print(np.mean(galaxy_u_g_color))
 
 # We use the relation between mass and velocity dispersion provided by the virial theorem \n
 # to estimate the mass of the galaxies
@@ -53,6 +54,7 @@ filtered_velocity_dispersion: list[float,...] = galaxy_velocity_dispersion[veloc
 galaxy_log10_mass: list[float,...] =  2*np.log10(filtered_velocity_dispersion) - np.log10(6.673) + 11
 
 # === ADD THIS LINE TO CENTER YOUR DATA ===
+print(np.mean(galaxy_log10_mass))
 galaxy_log10_mass = galaxy_log10_mass - np.mean(galaxy_log10_mass)
 # print(galaxy_log10_mass)
 
@@ -73,34 +75,43 @@ class Bayesian_Regressoion_for_Galaxy_Mass_Color_Fit(object):
         self.colors: list[float] = colors
         self.mass: list[float] = mass
 
+        # a much more efficient way to store the samples and avoid running MCMC in every single call just to make a plot
+        self.samples_with_chain = None
+        self.samples_without_chain = None
+
     def log_likelihood_estimation_function(self, parameters: list) -> float:
         slope, intercept, sigma_int = parameters
         predicted_fit: list[float] = slope*self.mass + intercept
 
-        return -np.sum(norm.logpdf(self.colors,predicted_fit,sigma_int))
+        return np.sum(norm.logpdf(self.colors,predicted_fit,sigma_int))
 
     def maximum_likelihood_estimation(self) -> tuple[float]:
 
-        maximized_paremeters: OptimizeResult = minimize(self.log_likelihood_estimation_function, self.initial_guess, method="Nelder-Mead")
+        def log_likelihood(parameters):
+
+            return -self.log_likelihood_estimation_function(parameters)
+
+        maximized_paremeters: OptimizeResult = minimize(log_likelihood, self.initial_guess, method="Nelder-Mead")
 
         slope, intercept, sigma_int = maximized_paremeters.x
 
         return slope, intercept
 
-    def frequentist_line_fit(self):
+    def frequentist_line_fit(self, mass_mean: float = 14.355933029780603):
 
         slope, intercept = self.maximum_likelihood_estimation()
 
         # x_fit = self.colors
         # y_fit = slope * self.mass + intercept
-        mass_range: list[float] = np.linspace(np.min(self.mass), np.max(self.mass), 500)
-        color_fit: list[float] = intercept + slope * mass_range
+        mass_range: list[float] = np.linspace(np.min(self.mass + mass_mean ), np.max(self.mass + mass_mean ), 500)
+        # print(mass_range)
+        color_fit: list[float] = intercept + slope * (mass_range - mass_mean) 
 
         figure = plt.figure(figsize=(10,8.7))
         ax_main = figure.add_subplot(1,1,1)
 
         # Plot data points
-        ax_main.scatter(self.mass, self.colors, alpha=0.5, s=10, label='Galaxies')
+        ax_main.scatter(self.mass + mass_mean, self.colors, alpha=0.5, s=10, label='Galaxies')
         
         # Plot fitted line
         ax_main.plot(mass_range, color_fit, 'r-', linewidth=2,label=f'Fit: color = {intercept:.2f} + {slope:.2f}*mass')
@@ -134,7 +145,7 @@ class Bayesian_Regressoion_for_Galaxy_Mass_Color_Fit(object):
 
     def log_posterior_probability(self, parameters) -> float:
 
-        return self.log_prior_probability(parameters) +(-self.log_likelihood_estimation_function(parameters))
+        return self.log_prior_probability(parameters) + self.log_likelihood_estimation_function(parameters)
 
     ### testing the model works
 
@@ -145,14 +156,14 @@ class Bayesian_Regressoion_for_Galaxy_Mass_Color_Fit(object):
         likelihood_value: float = self.log_likelihood_estimation_function(test_parameter)
         prior_value: float = self.log_prior_probability(test_parameter)
         posterior_value: float = self.log_posterior_probability(test_parameter)
-        print(f' Likelihood is: {likelihood_value}')
-        print(f' Prior is: {prior_value}')
-        print(f' Posterior is: {posterior_value}')
+        # print(f' Likelihood is: {likelihood_value}')
+        # print(f' Prior is: {prior_value}')
+        # print(f' Posterior is: {posterior_value}')
 
         #test with bad parameters to see the limit of the code
         bad_test_parameter: list[float] = [0,1,-1]
         bad_posterior: float = self.log_posterior_probability(bad_test_parameter)
-        print(f' Bad posterior should have -inf since the param {bad_test_parameter} is bad: {bad_posterior}')
+        # print(f' Bad posterior should have -inf since the param {bad_test_parameter} is bad: {bad_posterior}')
 
     # counterpart of the mle for the frequentist approach!
     def maximum_a_posteriori_function(self) -> list[float]:
@@ -171,18 +182,18 @@ class Bayesian_Regressoion_for_Galaxy_Mass_Color_Fit(object):
 
             map_slope, map_intercept, map_sigma_int = map_parameters.x
 
-            print(map_slope, map_intercept, map_sigma_int)
+            # print(map_slope, map_intercept, map_sigma_int)
 
             # we now compare with the mle value
             mle_slope, mle_intercept = self.maximum_likelihood_estimation()
 
-            print(f' map slope {map_slope} vs mle slope {mle_slope}')
-            print(f' map intercept {map_intercept} vs mle intercept {mle_intercept}')
+            # print(f' map slope {map_slope} vs mle slope {mle_slope}')
+            # print(f' map intercept {map_intercept} vs mle intercept {mle_intercept}')
 
             #if the map results are in good agreement, then choose them over the mle counterpartss
             return map_parameters.x
         else:
-            print(f' maximization of map failed', map_parameters.message)
+            # print(f' maximization of map failed', map_parameters.message)
 
             return None
 
@@ -233,12 +244,12 @@ class Bayesian_Regressoion_for_Galaxy_Mass_Color_Fit(object):
                 log_posterior_probability_container[i,j] = self.log_posterior_probability(parameters)
         
         max_log_posterior = np.max(log_posterior_probability_container)
-        print(f' log_posterior_max is {max_log_posterior} ')
+        # print(f' log_posterior_max is {max_log_posterior} ')
  
 
         posterior_probability_container = np.exp(log_posterior_probability_container - max_log_posterior ) 
 
-        print(posterior_probability_container)
+        # print(posterior_probability_container)
 
         return posterior_probability_container
 
@@ -308,9 +319,8 @@ class Bayesian_Regressoion_for_Galaxy_Mass_Color_Fit(object):
         return figure, ax_contour
 
     
-    def bayesian_mcmc_initiator(self, number_of_steps: int =1000, burning_point: int = 100) -> tuple[list[float]]:
+    def bayesian_mcmc_initiator(self, number_of_steps: int =2000, burning_point: int = 100, number_of_walkers: int = 50, number_of_dimensions: int = 3) -> tuple[list[float]]:
         #proper bayesian fit using mcmc sampling
-
         #define posterior function for MCMC # This wraps the existing log posteriorfunction for MCMC
 
         def mcmc_log_posterior(parameters: list[float]) -> float:
@@ -319,38 +329,34 @@ class Bayesian_Regressoion_for_Galaxy_Mass_Color_Fit(object):
 
         #initialize sampler
 
-        number_of_parameters: int = 3 #slope, intercept, sigma_int
-
         initial_parameters: list[float] = self.maximum_a_posteriori_function() # smart starting point # Very advisable
 
         # set up MCMC for running
-        initializer: list[array] = initial_parameters + 1e-4*np.random.randn(32,number_of_parameters) # CREATE 32 WALKERS, EACH STARTING NEAR OUR MAP ESTIMATE
+        initializer: list[array] = initial_parameters + 1e-4*np.random.randn(number_of_walkers,number_of_dimensions) # CREATE 32 WALKERS, EACH STARTING NEAR OUR MAP ESTIMATE
         # 32 walkers = 32 parallel chains exploring simultaneously
         # 1e-4 * random: small random perturbations so they start slightly differently
-        print(initializer)
-
-        number_of_walkers, number_of_dimensions = initializer.shape # number_of_walkers=32, number_of_dimensions=3
+        # print(initializer)
 
         sampler = emcee.EnsembleSampler(number_of_walkers, number_of_dimensions, mcmc_log_posterior) #CREATE THE MCMC ENGINE:
-        # number_of_walkers: how many explorers (32)
+        # number_of_walkers: how many explorers (50)
         # number_of_dimensions: dimensions of parameter space (3)  
         # mcmc_log_posterior: the probability landscape to explore
         sampler.run_mcmc(initializer,number_of_steps, progress=True) # RUN THE SAMPLER FOR n_steps ITERATIONS
         # progress=True shows a nice progress bar
 
         # Now, we extract the samples
-        samples = sampler.get_chain(discard=burning_point,thin=15, flat=True) # CLEAN UP THE RAW SAMPLES:
+        self.samples_with_chain = sampler.get_chain()
+        self.samples_without_chain = sampler.get_chain(discard=burning_point,thin=15, flat=True) # CLEAN UP THE RAW SAMPLES:
         # discard=100: remove first 100 steps (BURN-IN - before chains stabilize)
         # thin=15: keep every 15th sample (reduce correlation between steps)
         # flat=True: combine all 32 walkers into one array
-        return sampler, samples
+        return self.samples_with_chain, self.samples_without_chain
 
         
     def plot_mcmc_trace(self, burning_point: int =100) -> tuple:
-        # import sampler
-        sampler, samples = self.bayesian_mcmc_initiator()
+
         # Get the raw chains (including burn-in)
-        chains = sampler.get_chain() # the shape of this chains is of the form: (n_steps, n_walkers, n_dim)
+        chains = self.samples_with_chain[:] # the shape of this chains is of the form: (n_steps, n_walkers, n_dim)
         
         parameter_names = ['Slope', 'Intercept', 'Sigma_int']
         figure, ax_main = plt.subplots(3,1, figsize=(10,9))
@@ -378,7 +384,7 @@ class Bayesian_Regressoion_for_Galaxy_Mass_Color_Fit(object):
     def plot_mcmc_corner(self):
         # helps in visualizing the posterior
         # we use the python package called corner
-        sampler, samples = self.bayesian_mcmc_initiator()
+        samples = self.samples_without_chain[:]
         labels: list[str] = ['Slope', 'Intercept', 'Sigma_int']
         # what does truths do??
         truths=[np.mean(samples[:,0]), np.mean(samples[:,1]), np.mean(samples[:,2])]
@@ -387,17 +393,17 @@ class Bayesian_Regressoion_for_Galaxy_Mass_Color_Fit(object):
 
         return corner_figure
 
-    def plot_bayesian_fit(self): 
+    def plot_bayesian_fit(self,  mass_mean = 14.355933029780603 ): 
 
         # import sample data
-        sampler, samples = self.bayesian_mcmc_initiator()
+        samples = self.samples_without_chain[:]
 
         # Extract parameter samples
         sample_slopes = samples[:,0]
         sample_intercepts = samples[:,1]
 
         #create mass range
-        mass_range = np.linspace(min(self.mass), max(self.mass),500)
+        mass_range = np.linspace(min(self.mass + mass_mean ), max(self.mass + mass_mean ),500) # setting everything baclk to their original scale!!!
 
         #create predictive line # plot 100 random lines from the posterior
 
@@ -409,16 +415,16 @@ class Bayesian_Regressoion_for_Galaxy_Mass_Color_Fit(object):
         ax_main = figure.add_subplot(1,1,1)
 
         #Plot data points
-        ax_main.scatter(self.mass, self.colors, alpha=0.5, s=10, label='Galaxies')
+        ax_main.scatter(self.mass + mass_mean, self.colors, alpha=0.5, s=10, label='Galaxies')
 
         #plot random lines from posterior
 
         for lines in random_line_indices:
-            color_fit: list[float] = sample_intercepts[lines] + sample_slopes[lines] * mass_range
+            color_fit: list[float] = sample_intercepts[lines] + sample_slopes[lines] * (mass_range - mass_mean)
             ax_main.plot(mass_range, color_fit, 'r-', linewidth=1)
 
         # Plot mean line
-        mean_line = np.mean(sample_intercepts) + np.mean(sample_slopes) * mass_range
+        mean_line = np.mean(sample_intercepts) + np.mean(sample_slopes) * (mass_range - mass_mean)
         ax_main.plot(mass_range, mean_line, color="black", linewidth=4, label='Bayesian Mean')
 
         ax_main.set_xlabel('Log10(M_galaxy) [centered]')
@@ -433,18 +439,18 @@ if __name__ == '__main__':
     initial_guess: list[float] = [0.5,1.0,0.2]
     desired_fit = Bayesian_Regressoion_for_Galaxy_Mass_Color_Fit(initial_guess, filtered_u_g_color, galaxy_log10_mass)
     slope, intercept = desired_fit.maximum_likelihood_estimation()
-    print(f' The best fit slope and intercept are {slope:.4} and {intercept:.4} respectively \n')
+    # print(f' The best fit slope and intercept are {slope:.4} and {intercept:.4} respectively \n')
     desired_fig, desired_axis = desired_fit.frequentist_line_fit()
     plt.show()
 
     desired_fit.testing_Bayesian_setup()
-    print(desired_fit.maximum_a_posteriori_function())
+    # print(desired_fit.maximum_a_posteriori_function())
 
     contour_figure, contour_ax = desired_fit.posterior_probability_contour_plot()
     plt.show()
 
     # Run MCMC
-    sampler, samples = desired_fit.bayesian_mcmc_initiator()
+    desired_fit.bayesian_mcmc_initiator()
 
     # Visualize everything!
     # figure, ax_main[0], ax_main[1], ax_main[2] = desired_fit.plot_mcmc_trace() # Check convergence
