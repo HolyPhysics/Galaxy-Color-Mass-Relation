@@ -1,0 +1,1 @@
+This project explores the application of Bayesian inference and machine learning to the study of galaxy clusters and the underlying relationship between the masses of several disparate galaxies and their corresponding UV(UG)-color.

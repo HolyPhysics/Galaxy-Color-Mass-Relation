@@ -42,7 +42,6 @@ galaxy_velocity_dispersion: list[float] = galaxy_photometric_data['velDisp']
 galaxy_distance_info: list[float,...] = galaxy_photometric_data['redshift']
 
 galaxy_u_g_color: list[float,...] = galaxy_u_mag - galaxy_g_mag # ... indicates that this can be of variable length
-print(np.mean(galaxy_u_g_color))
 
 # We use the relation between mass and velocity dispersion provided by the virial theorem \n
 # to estimate the mass of the galaxies
@@ -54,7 +53,6 @@ filtered_velocity_dispersion: list[float,...] = galaxy_velocity_dispersion[veloc
 galaxy_log10_mass: list[float,...] =  2*np.log10(filtered_velocity_dispersion) - np.log10(6.673) + 11
 
 # === ADD THIS LINE TO CENTER YOUR DATA ===
-print(np.mean(galaxy_log10_mass))
 galaxy_log10_mass = galaxy_log10_mass - np.mean(galaxy_log10_mass)
 # print(galaxy_log10_mass)
 
@@ -67,6 +65,13 @@ galaxy_log10_mass = galaxy_log10_mass - np.mean(galaxy_log10_mass)
 
 # ax.hist(galaxy_g_mag, bins= int(np.floor(0.5*np.sqrt(len(galaxy_g_mag)))), color='red')
 # plt.show()
+
+# for exportation of files
+
+def GET_CLEAN_DATA() -> tuple[list[float,...]]:
+
+    return galaxy_log10_mass, filtered_u_g_color, filtered_velocity_dispersion
+
 
 class Bayesian_Regressoion_for_Galaxy_Mass_Color_Fit(object):
 
@@ -436,6 +441,9 @@ class Bayesian_Regressoion_for_Galaxy_Mass_Color_Fit(object):
         return figure, ax_main
 
 if __name__ == '__main__':
+    print(np.mean(galaxy_u_g_color)) # prints the mean u_g_color
+    print(np.mean(galaxy_log10_mass)) # prints the mean log10_mass
+
     initial_guess: list[float] = [0.5,1.0,0.2]
     desired_fit = Bayesian_Regressoion_for_Galaxy_Mass_Color_Fit(initial_guess, filtered_u_g_color, galaxy_log10_mass)
     slope, intercept = desired_fit.maximum_likelihood_estimation()
