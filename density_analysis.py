@@ -2,6 +2,7 @@ from Bayesian_regression_main import GET_CLEAN_DATA
 import numpy as np
 from sklearn.neighbors import KernelDensity
 import matplotlib.pyplot as plt
+from matplotlib.pyplot import hist as mat_hist # this is my attempt to get bins="freedman" to work since as it seemed the python interpretter was having trouble differentiating matplotlib's hist and the astropy.visualization.hist()
 from astropy.visualization import hist
 from sklearn.model_selection import GridSearchCV
 # from sklearn.preprocessing import train_test_split # might need to split data into training and testing data
@@ -23,9 +24,7 @@ def probability_density_estimation_with_kde(data: list[float,...], data_name: st
     grid_search.fit(data_to_study) # fit our data to the model
 
     optimal_bandwidth = grid_search.best_params_["bandwidth"]
-    best_score = grid_search.best_score_
-    print(f' The best bandwidth for the KDE of {data_name} is {optimal_bandwidth}.')
-    print(f' The best cross-validation score(log-likelihood) is {best_score}.')
+    best_score = grid_search.best_score_ # cross validation score(log likelihood)
 
     kde_model = grid_search.best_estimator_ # this is the probability density function estimated by the GridSearchCV that best fits the data
 
@@ -43,30 +42,79 @@ def probability_density_estimation_with_kde(data: list[float,...], data_name: st
 
     figure, ax_main = plt.subplots(2, 1, figsize=(10,9.1), sharex= True)
 
-    ax_main[0].hist(data, bins="scott", density=True, histtype="stepfilled", label=f"Histogram of {data_name}")
+    ax_main[0].hist(data, bins="scott", density=True, histtype="stepfilled", label=f"Histogram for {data_name}")
     ax_main[0].legend(loc='best')
 
-    ax_main[1].plot(data_to_estimate_their_density, probabilities, label=f"KDE for {data_name}")
+    ax_main[1].plot(data_to_estimate_their_density, probabilities, label=f"KDE for {data_name}, bandwidth = {optimal_bandwidth:.4}")
     ax_main[1].fill_between(data_to_estimate_their_density, probabilities, alpha=0.5, color='red')
-    ax_main[1].set_xlabel("Data") # this is sharedf by the histogram and the plot
-    ax_main[1].set_ylabel("Probability")
+    ax_main[1].set_xlabel(f"{data_name}") # this is sharedf by the histogram and the plot
+    ax_main[1].set_ylabel("Probability/Density")
     ax_main[1].legend(loc="best")
 
     figure.tight_layout()
     plt.show()
     # I could also decide to write the GridSearchCV code differently from this. That is, I could decide to keep the KDE and the GridSearchCV functions separate. But, that would be quite inefficient.
 
+    print(f' \n =========KDE Results for {data_name}=========')
+    print(f' The best bandwidth for the KDE of {data_name} is {optimal_bandwidth:.4}.')
+    print(f' The best cross-validation score(log-likelihood) is {best_score}.')
+    print(f' =========End of results for {data_name}========= \n')
 
 
 # next thing is to test/compare different bandwidths.
 # write this down here!!!
 
 
+def probability_density_estimation_with_gmm(data: list[float,...], data_name: str) -> None:
+
+    data_to_study = data[:, None]
+
+    number_of_gaussian_components = np.arange(1, 20) # better preffered to np.linspace() for this particular function  # np.linspace() is preffered when we care about the inclusion of the endpoint
+
+    gaussian_models = [GaussianMixture(components, random_state=42).fit(data_to_study) for components in number_of_gaussian_components] # this is called a python list comprehension
+
+    # to choose the best model, we need to evaluate the BIC and choose the model with the lowest BIC value since the lower the better
+    gaussian_model_bics = [model_i.bic(data_to_study) for model_i in gaussian_models]
+
+    # now, we find the index of the model with the least BIC value
+    index_of_optimal_gaussian_mixture_model = np.argmin(gaussian_model_bics)
+    optimal_number_of_gaussian_components = number_of_gaussian_components[index_of_optimal_gaussian_mixture_model] 
+    optimal_gaussian_mixture_model = gaussian_models[index_of_optimal_gaussian_mixture_model]
+    bic_for_optimal_gaussian_mixture_model = gaussian_model_bics[index_of_optimal_gaussian_mixture_model]
+
+    # Now, we create an array of data to estimate their densities(probabilities)
+    data_to_estimate_their_density = np.linspace(min(data), max(data), 500)
+    transformed_data_to_estimate_their_density = data_to_estimate_their_density[:, None]
+
+    log_probabilities = optimal_gaussian_mixture_model.score_samples(transformed_data_to_estimate_their_density)
+    probabilities = np.exp(log_probabilities)
+
+    # now, we have happily(not exactly) reached best part of the this stuff
+
+    figure, ax_main = plt.subplots(2,1, figsize=(10,9.1), sharex=True)
+
+    ax_main[0].hist(data, bins="scott", histtype="stepfilled", label=f"Histogram for {data_name}")
+    ax_main[0].legend(loc="best")
+
+    ax_main[1].plot(data_to_estimate_their_density, probabilities, label=f"GMM estimate for {data_name}, {optimal_number_of_gaussian_components} components")
+    ax_main[1].fill_between(data_to_estimate_their_density, probabilities, color="red")
+    ax_main[1].set_xlabel(f"{data_name}") # this is the shared axis
+    ax_main[1].set_ylabel('Probability/Density')
+    ax_main[1].legend(loc="best")
+
+    figure.tight_layout()
+    plt.show()
+
+    print(f" \n =========GMM Results for {data_name}=========")
+    print(f' The optimal number of components is {optimal_number_of_gaussian_components}.')
+    print(f' The BIC for this Gaussian Mixture Model is {bic_for_optimal_gaussian_mixture_model:.6}.')
+    print(f' =========End of results for {data_name}========= \n')
+
+# learn how to plot the individual guassian components found from the gaussian ixture model 
 
 
-
-
-# This code is highly recommended !!!
+#  Check whether the number of components for UG-Color and log_mass are equivalent.
+# This code is highly recommended !!! Add this to the GMM above and run this for the UG-Color and Log_mass to check if it predicts the same number of clusters
 
 # this is with the Gaussian Mixture Model !!!
 # # LINE 9: Print what we discovered about each group
@@ -85,10 +133,23 @@ if __name__ == "__main__":
     second_data_to_estimate_pdf_for = u_g_color[:]
     third_data_to_estimate_pdf_for = velocity_dispersion[:]
 
-    # visualizations
-    probability_density_estimation_with_kde(first_data_to_estimate_pdf_for,"log_mass_of_galaxies")
+    # pdf estiimation with kde
+    probability_density_estimation_with_kde(first_data_to_estimate_pdf_for,"log(Mass of Galaxies)")
     probability_density_estimation_with_kde(second_data_to_estimate_pdf_for,"UG colors of Galaxies")
     probability_density_estimation_with_kde(third_data_to_estimate_pdf_for, "Velocity Dispersion of Galaxies")
+
+    # pdf estimation with GMM
+    probability_density_estimation_with_gmm(first_data_to_estimate_pdf_for,"log(Mass of Galaxies)")
+    probability_density_estimation_with_gmm(second_data_to_estimate_pdf_for, "UG colors of Galaxies")
+    probability_density_estimation_with_gmm(third_data_to_estimate_pdf_for, "Velocity Dispersion of Galaxies")
+
+
+# To check whether the number_of_components for UG_Colors and Log_mass is equal using a code, make these two functions methods in a class and them have their 
+# number_of_component values stored in the __init__ method of the class and do a simple "if-else" check afterwards!! 
+# This should be a good way to easily extra these values.
+
+# Do this later !!!
+
 
 
 
