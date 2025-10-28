@@ -49,11 +49,11 @@ class probability_density_estimation(object):
 
         figure, ax_main = plt.subplots(2, 1, figsize=(10,9.1), sharex= True)
 
-        ax_main[0].hist(self.data, bins="scott", density=True, histtype="stepfilled", label=f"Histogram for {data_name}")
+        ax_main[0].hist(self.data, bins="scott", density=True, histtype="stepfilled", label=f"Histogram for {data_name}", color="black")
         ax_main[0].legend(loc='best')
 
         ax_main[1].plot(data_to_estimate_their_density, probabilities, label=f"KDE for {data_name}, bandwidth = {optimal_bandwidth:.4}")
-        ax_main[1].fill_between(data_to_estimate_their_density, probabilities, alpha=0.5, color='red')
+        ax_main[1].fill_between(data_to_estimate_their_density, probabilities, alpha=0.5, color='black')
         ax_main[1].set_xlabel(f"{data_name}") # this is sharedf by the histogram and the plot
         ax_main[1].set_ylabel("Probability/Density")
         ax_main[1].legend(loc="best")
@@ -97,14 +97,18 @@ class probability_density_estimation(object):
         probabilities = np.exp(log_probabilities)
 
         # now, we have happily(not exactly) reached best part of the this stuff
+        # add the code for the visualization ot the individual pdfs here
+        probability_of_data_points_belonging_to_any_gaussian_component = optimal_gaussian_mixture_model.predict_proba(transformed_data_to_estimate_their_density)
+        pdf_for_indvidual_gaussian_component = probability_of_data_points_belonging_to_any_gaussian_component * probabilities[:, None] # now, you wanna plot this
 
         figure, ax_main = plt.subplots(2,1, figsize=(10,9.1), sharex=True)
 
-        ax_main[0].hist(self.data, bins="scott", histtype="stepfilled", label=f"Histogram for {data_name}")
+        ax_main[0].hist(self.data, bins="scott", histtype="stepfilled", label=f"Histogram for {data_name}", color="black")
         ax_main[0].legend(loc="best")
 
         ax_main[1].plot(data_to_estimate_their_density, probabilities, label=f"GMM estimate for {data_name}, {optimal_number_of_gaussian_components} components")
-        ax_main[1].fill_between(data_to_estimate_their_density, probabilities, color="red")
+        ax_main[1].plot(data_to_estimate_their_density,pdf_for_indvidual_gaussian_component, linestyle="--", color="green")
+        ax_main[1].fill_between(data_to_estimate_their_density, probabilities, color="black")
         ax_main[1].set_xlabel(f"{data_name}") # this is the shared axis
         ax_main[1].set_ylabel('Probability/Density')
         ax_main[1].legend(loc="best")
@@ -117,23 +121,23 @@ class probability_density_estimation(object):
         print(f' The BIC for this Gaussian Mixture Model is {bic_for_optimal_gaussian_mixture_model:.6}.')
         print(f' =========End of results for {data_name}========= \n')
 
-# learn how to plot the individual guassian components found from the gaussian mixture model 
+        # print the discoveries about the Gaussian components
+
+        for values in range(optimal_number_of_gaussian_components):
+            weight = optimal_gaussian_mixture_model.weights_[values] # Fraction of Galaxies in this components
+            mean = optimal_gaussian_mixture_model.means_[values,0]
+            std = optimal_gaussian_mixture_model.covariances_[values,0,0]
+
+            if values == 0:
+                print(f"=========Discoveries from the Gaussian Components for {data_name}=========")
+                
+            print(f' Group {values + 1} contains {weight:.4%} of galaxies, has mean {mean:.4}, and standard deviation {std:.4} ')
+
+            if values == optimal_number_of_gaussian_components-1:
+                print("=========En of results=========")
 
 
 #  Check whether the number of components for UG-Color and log_mass are equivalent.
-# This code is highly recommended !!! Add this to the GMM above and run this for the UG-Color and Log_mass to check if it predicts the same number of clusters
-
-# this is with the Gaussian Mixture Model !!!
-# # LINE 9: Print what we discovered about each group
-# print(f"\n DISCOVERED GALAXY GROUPS:")
-# for i in range(best_n):
-#     weight = best_gmm.weights_[i]  # Fraction of galaxies in this group
-#     mean = best_gmm.means_[i, 0]   # Average mass of this group
-#     std = np.sqrt(best_gmm.covariances_[i, 0, 0])  # Spread of masses
-    
-#     print(f"Group {i+1}: {weight:.1%} of galaxies, " +
-#             f"mean mass = {mean:.2f}, spread = {std:.2f}")
-
 
 if __name__ == "__main__":
     first_data_to_estimate_pdf_for = galaxy_log10_mass[:]
