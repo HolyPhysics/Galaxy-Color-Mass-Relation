@@ -49,4 +49,5 @@ def a_much_faster_visualization() -> None:
 
 
 a_much_faster_visualization() # This shows all the possible relationships between the different features of the data
-# It appears there ought to be about 6-8 galaxy clusters in the data and the two visualizations are in complete agreement.
+# It appears there ought to be about 6-8 galaxy clusters in the data and the two visualizations are in complete agreement???( if forgot what I wrote initially).
+
