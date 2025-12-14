@@ -24,6 +24,7 @@ def ra_dec_sketcher() -> None:
     ax_main.scatter(ra_container, dec_container, c=redshift_container, s=60)
 
     ax_main.set_xlim(ax_main.get_xlim()[::-1])
+
     ax_main.set_xlabel(" Right Ascension(RA)")
     ax_main.set_ylabel(" Declination(Dec)")
     ax_main.legend(loc="best")
