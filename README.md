@@ -39,5 +39,9 @@ Use of Maximum Likelihood estimation, posterior probability generation, corner c
 
 ```bash
 pip install numpy matplotlib astropy astroML 
-
+```
 --- 
+
+## Example Plots
+
+<!-- ### Add example plots to the "Star-Quasar" README>m file on github -->
