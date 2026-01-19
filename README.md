@@ -13,7 +13,6 @@ In this project, I explore the application of Bayesian inference and machine lea
 
 ---
 
-<!-- 
 ### Features
 Discuss the cluster analysis, cross-validation, density analysis.
 
@@ -25,7 +24,7 @@ Use of Maximum Likelihood estimation, posterior probability generation, corner c
 
 ---
 
-<!-- ## Installation
+## Installation
 
 ### Requirements
 
